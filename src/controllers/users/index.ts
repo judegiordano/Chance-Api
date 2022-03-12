@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import _ from "lodash";
 
 import { userService } from "../../models";
-import { mockUsers } from "../../services";
+import { mockUsers, chance } from "../../services";
 
 export const users = async function (app: FastifyInstance) {
 	app.post<{
@@ -48,5 +48,33 @@ export const users = async function (app: FastifyInstance) {
 			return acc;
 		}, { count: 0, ids: [] });
 		return stats;
+	});
+	app.get<{
+		Querystring: {
+			count: number
+		}
+	}>("users", {
+		schema: {
+			querystring: {
+				type: "object",
+				properties: {
+					count: {
+						type: "number",
+						minimum: 1,
+						maximum: 100,
+						default: 5
+					}
+				}
+			},
+			response: {
+				200: { $ref: "usersArray#" }
+			}
+		}
+	}, async (req) => {
+		const { count: limit } = req.query;
+		const range = await userService.count();
+		const skip = chance.integer({ min: 1, max: range - limit });
+		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit });
+		return chance.shuffle(users);
 	});
 };
