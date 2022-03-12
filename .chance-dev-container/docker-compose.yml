@@ -1,0 +1,22 @@
+version: '3.6'
+
+services:
+  # mongo service
+  chance-mongodb-local:
+    image: mongo:latest
+    container_name: chance-mongodb-local
+    ports:
+      - 27017:27017
+    expose:
+      - 27017
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - mongo_net
+
+volumes:
+  mongo-data:
+
+networks:
+  mongo_net:
+    driver: bridge
