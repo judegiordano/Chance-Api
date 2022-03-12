@@ -4,9 +4,16 @@
   "main": "index.js",
   "author": "judegiordano <judegiordano@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": "^14.15.0 || ^16.13.0",
+    "yarn": "^1.22.0"
+  },
   "scripts": {
+    "prepare": "npx husky install",
     "lint": "eslint --fix --ext .ts .",
-    "prepare": "npx husky install"
+    "start": "sst start --stage",
+    "console": "sst console --stage",
+    "deploy": "sst deploy --stage"
   },
   "dependencies": {
     "@serverless-stack/resources": "^0.69.0",
