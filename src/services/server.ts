@@ -1,6 +1,8 @@
 import Fastify, { FastifyError, FastifyRequest, FastifyReply } from "fastify";
 import helmet from "fastify-helmet";
 
+import { schemas } from "../middleware";
+
 export const app = Fastify({
 	logger: true,
 	maxParamLength: 100,
@@ -10,6 +12,7 @@ export const app = Fastify({
 	onProtoPoisoning: "error",
 	onConstructorPoisoning: "error"
 });
+app.register(schemas);
 app.register(helmet);
 app.setErrorHandler(async (error: FastifyError, req: FastifyRequest, res: FastifyReply) => {
 	req.log.error(error, error.stack);

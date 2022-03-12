@@ -1,6 +1,9 @@
-import mongoose, { connect } from "mongoose";
+import mongoose, { Schema as BaseSchema, SchemaDefinition, SchemaOptions, connect, model as BaseModel } from "mongoose";
+import { customAlphabet } from "nanoid";
 
 import { config } from "./config";
+
+const nanoid = customAlphabet("1234567890", 20);
 
 const connection = {
 	isConnected: 0
@@ -20,4 +23,34 @@ export async function createConnection() {
 
 export async function closeConnection() {
 	return mongoose.connection.close();
+}
+
+export interface IModel {
+	_id: string
+	created_at: Date
+	updated_at: Date
+}
+
+export class Schema extends BaseSchema {
+	constructor(schema: SchemaDefinition, options?: SchemaOptions) {
+		super({
+			_id: {
+				type: String,
+				default: () => nanoid(),
+				unique: true,
+				required: true
+			},
+			...schema
+		}, {
+			timestamps: {
+				createdAt: "created_at",
+				updatedAt: "updated_at"
+			},
+			...options
+		});
+	}
+}
+
+export function model<T extends IModel>(collectionName: string, schema: Schema) {
+	return BaseModel<T>(collectionName, schema as BaseSchema);
 }
