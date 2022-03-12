@@ -2,9 +2,11 @@ import { FastifyPluginCallback } from "fastify";
 
 import { app } from "../services";
 import { developer } from "./developer";
+import { users } from "./users";
 
 const routers = [
-	developer
+	developer,
+	users
 ] as unknown as FastifyPluginCallback[];
 
 for (const router of routers) {

@@ -2,6 +2,7 @@ import Fastify, { FastifyError, FastifyRequest, FastifyReply } from "fastify";
 import helmet from "fastify-helmet";
 
 import { schemas } from "../middleware";
+import { authenticate } from "../decorators";
 
 export const app = Fastify({
 	logger: true,
@@ -12,6 +13,7 @@ export const app = Fastify({
 	onProtoPoisoning: "error",
 	onConstructorPoisoning: "error"
 });
+app.decorate("authenticate", authenticate);
 app.register(schemas);
 app.register(helmet);
 app.setErrorHandler(async (error: FastifyError, req: FastifyRequest, res: FastifyReply) => {
