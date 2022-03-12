@@ -77,4 +77,30 @@ export const users = async function (app: FastifyInstance) {
 		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit });
 		return chance.shuffle(users);
 	});
+	app.get<{
+		Params: {
+			id: number
+		}
+	}>("users/:id", {
+		schema: {
+			params: {
+				type: "object",
+				required: ["id"],
+				properties: {
+					id: { type: "string" }
+				}
+			},
+			response: {
+				200: { $ref: "user#" }
+			}
+		}
+	}, async (req, res) => {
+		const { id } = req.params;
+		const user = await userService.findById(id);
+		if (!user) {
+			res.statusCode = 404;
+			throw new Error("document not found");
+		}
+		return user;
+	});
 };
