@@ -3,6 +3,7 @@ import _ from "lodash";
 
 import { userService } from "../../models";
 import { mockUsers, chance } from "../../services";
+import { NotFoundError } from "../../types";
 
 export const users = async function (app: FastifyInstance) {
 	app.post<{
@@ -28,7 +29,7 @@ export const users = async function (app: FastifyInstance) {
 					type: "object",
 					properties: {
 						count: { type: "number" },
-						ids: {
+						_ids: {
 							type: "array",
 							items: { type: "string" }
 						}
@@ -41,12 +42,12 @@ export const users = async function (app: FastifyInstance) {
 		const users = await mockUsers(count);
 		const chunks = _.chunk(users, 50);
 		const inserted = await Promise.all(chunks.map((userChunk) => userService.insertMany(userChunk)));
-		const stats = inserted.reduce((acc: { count: number, ids: string[] }, docs) => {
+		const stats = inserted.reduce((acc, docs) => {
 			const ids = docs.map(({ _id }) => _id);
-			acc.ids.push(...ids);
+			acc._ids.push(...ids);
 			acc.count += ids.length;
 			return acc;
-		}, { count: 0, ids: [] });
+		}, { count: 0, _ids: [] } as { count: number, _ids: string[] });
 		return stats;
 	});
 	app.get<{
@@ -74,7 +75,7 @@ export const users = async function (app: FastifyInstance) {
 		const { count: limit } = req.query;
 		const range = await userService.count();
 		const skip = chance.integer({ min: 1, max: range - limit });
-		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit });
+		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
 		return chance.shuffle(users);
 	});
 	app.get<{
@@ -94,13 +95,10 @@ export const users = async function (app: FastifyInstance) {
 				200: { $ref: "user#" }
 			}
 		}
-	}, async (req, res) => {
+	}, async (req) => {
 		const { id } = req.params;
-		const user = await userService.findById(id);
-		if (!user) {
-			res.statusCode = 404;
-			throw new Error("document not found");
-		}
+		const user = await userService.findById(id, null, { lean: true });
+		if (!user) throw new NotFoundError();
 		return user;
 	});
 };

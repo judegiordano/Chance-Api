@@ -3,6 +3,7 @@ import helmet from "fastify-helmet";
 
 import { schemas } from "../middleware";
 import { authenticate } from "../decorators";
+import { CommonError } from "../types";
 
 export const app = Fastify({
 	logger: true,
@@ -16,11 +17,20 @@ export const app = Fastify({
 app.decorate("authenticate", authenticate);
 app.register(schemas);
 app.register(helmet);
-app.setErrorHandler(async (error: FastifyError, req: FastifyRequest, res: FastifyReply) => {
+app.setErrorHandler(async (error: FastifyError | CommonError, req: FastifyRequest, res: FastifyReply) => {
 	req.log.error(error, error.stack);
+	if (error instanceof CommonError) {
+		const { message, status } = error.toJSON();
+		res.statusCode = status;
+		return {
+			ok: false,
+			status,
+			error: message
+		};
+	}
 	return {
 		ok: false,
 		status: res.statusCode ?? 500,
-		error: error.message ?? "internal server error"
+		error: "internal server error"
 	};
 });

@@ -1,21 +1,13 @@
-import { FastifyRequest, FastifyReply } from "fastify";
+import { FastifyRequest } from "fastify";
 
 import { verify, config } from "../services";
+import { UnauthorizedError } from "../types";
 
-export async function authenticate(req: FastifyRequest, res: FastifyReply) {
-	if (!req.headers.authorization) {
-		res.statusCode = 401;
-		throw new Error("unauthorized");
-	}
+export async function authenticate(req: FastifyRequest) {
+	if (!req.headers.authorization) throw new UnauthorizedError();
 	const token = req.headers.authorization.split("Bearer ")[1];
-	if (!token) {
-		res.statusCode = 401;
-		throw new Error("unauthorized");
-	}
+	if (!token) throw new UnauthorizedError();
 	const { is_valid, stage } = verify<{ is_valid: boolean }>(token);
-	if (!is_valid || stage !== config.STAGE) {
-		res.statusCode = 401;
-		throw new Error("unauthorized");
-	}
+	if (!is_valid || stage !== config.STAGE) throw new UnauthorizedError();
 	return;
 }
