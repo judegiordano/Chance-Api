@@ -31,6 +31,6 @@ app.setErrorHandler(async (error: FastifyError | CommonError, req: FastifyReques
 	return {
 		ok: false,
 		status: res.statusCode ?? 500,
-		error: "internal server error"
+		error: error.message ?? "internal server error"
 	};
 });
