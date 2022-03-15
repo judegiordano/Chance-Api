@@ -1,6 +1,6 @@
-import { FastifyRequest } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 
-import { verify, config } from "../services";
+import { verify, config, redis } from "../services";
 import { UnauthorizedError } from "../types";
 
 export async function authenticate(req: FastifyRequest) {
@@ -10,4 +10,23 @@ export async function authenticate(req: FastifyRequest) {
 	const { is_valid, stage } = verify<{ is_valid: boolean }>(token);
 	if (!is_valid || stage !== config.STAGE) throw new UnauthorizedError();
 	return;
+}
+
+export async function cache(req: FastifyRequest, res: FastifyReply) {
+	const key = `${req.method}-${req.url}-${req.ip}`;
+	const data = await redis.get(key);
+	if (!data) {
+		req.cache = {
+			...req.cache,
+			shouldCache: true,
+			key
+		};
+		return;
+	}
+	req.cache = {
+		...req.cache,
+		shouldCache: false,
+		key: null
+	};
+	return res.send(data);
 }

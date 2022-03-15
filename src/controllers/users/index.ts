@@ -3,7 +3,7 @@ import _ from "lodash";
 import Chance from "chance";
 
 import { userService } from "../../models";
-import { mockUsers } from "../../services";
+import { mockUsers, chance } from "../../services";
 import { NotFoundError } from "../../types";
 
 export const users = async function (app: FastifyInstance) {
@@ -54,7 +54,6 @@ export const users = async function (app: FastifyInstance) {
 	app.get<{
 		Querystring: {
 			count: number
-			seed?: number | string
 		}
 	}>("users", {
 		schema: {
@@ -75,8 +74,47 @@ export const users = async function (app: FastifyInstance) {
 			}
 		}
 	}, async (req) => {
-		const { count: limit, seed } = req.query;
-		const chance = new Chance(seed ?? Date.now());
+		const { count: limit } = req.query;
+		const range = await userService.count();
+		const skip = chance.integer({ min: 1, max: range - limit });
+		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
+		return chance.shuffle(users);
+	});
+	app.get<{
+		Querystring: {
+			count: number
+		},
+		Params: {
+			seed: number | string
+		}
+	}>("users/seed/:seed", {
+		preValidation: [app.cache],
+		schema: {
+			querystring: {
+				type: "object",
+				properties: {
+					count: {
+						type: "number",
+						minimum: 1,
+						maximum: 100,
+						default: 5
+					}
+				}
+			},
+			params: {
+				type: "object",
+				properties: {
+					seed: { type: ["number", "string"] }
+				}
+			},
+			response: {
+				200: { $ref: "usersArray#" }
+			}
+		}
+	}, async (req) => {
+		const { count: limit } = req.query;
+		const { seed } = req.params;
+		const chance = new Chance(seed);
 		const range = await userService.count();
 		const skip = chance.integer({ min: 1, max: range - limit });
 		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
@@ -87,6 +125,7 @@ export const users = async function (app: FastifyInstance) {
 			id: number
 		}
 	}>("users/:id", {
+		preValidation: [app.cache],
 		schema: {
 			params: {
 				type: "object",
