@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import _ from "lodash";
 import Chance from "chance";
 
-import { userService } from "../../models";
+import { user } from "../../models";
 import { mockUsers, chance } from "../../services";
 import { NotFoundError } from "../../types";
 
@@ -42,7 +42,7 @@ export const users = async function (app: FastifyInstance) {
 		const { count } = req.query;
 		const users = await mockUsers(count);
 		const chunks = _.chunk(users, 50);
-		const inserted = await Promise.all(chunks.map((userChunk) => userService.insertMany(userChunk)));
+		const inserted = await Promise.all(chunks.map((userChunk) => user.insertMany(userChunk)));
 		const stats = inserted.reduce((acc, docs) => {
 			const ids = docs.map(({ _id }) => _id);
 			acc._ids.push(...ids);
@@ -75,9 +75,9 @@ export const users = async function (app: FastifyInstance) {
 		}
 	}, async (req) => {
 		const { count: limit } = req.query;
-		const range = await userService.count();
+		const range = await user.count();
 		const skip = chance.integer({ min: 1, max: range - limit });
-		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
+		const users = await user.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
 		return chance.shuffle(users);
 	});
 	app.get<{
@@ -115,9 +115,9 @@ export const users = async function (app: FastifyInstance) {
 		const { count: limit } = req.query;
 		const { seed } = req.params;
 		const chance = new Chance(seed);
-		const range = await userService.count();
+		const range = await user.count();
 		const skip = chance.integer({ min: 1, max: range - limit });
-		const users = await userService.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
+		const users = await user.find({ _id: { $ne: null } }, null, { skip, limit, lean: true });
 		return chance.shuffle(users);
 	});
 	app.get<{
@@ -140,8 +140,8 @@ export const users = async function (app: FastifyInstance) {
 		}
 	}, async (req) => {
 		const { id } = req.params;
-		const user = await userService.findById(id, null, { lean: true });
-		if (!user) throw new NotFoundError();
-		return user;
+		const exists = await user.findById(id, null, { lean: true });
+		if (!exists) throw new NotFoundError();
+		return exists;
 	});
 };

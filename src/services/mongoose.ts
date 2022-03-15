@@ -36,9 +36,7 @@ export class Schema extends BaseSchema {
 		super({
 			_id: {
 				type: String,
-				default: () => nanoid(),
-				unique: true,
-				required: true
+				default: () => nanoid()
 			},
 			...schema
 		}, {

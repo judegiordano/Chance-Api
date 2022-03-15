@@ -20,7 +20,7 @@ export interface IUser extends IModel {
 	}
 }
 
-export const userService = model<IUser>("User",
+export const user = model<IUser>("User",
 	new Schema({
 		profile: {
 			name: {
@@ -75,3 +75,7 @@ export const userService = model<IUser>("User",
 		}
 	})
 );
+
+export class UserService {
+
+}
